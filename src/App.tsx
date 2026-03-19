@@ -669,7 +669,7 @@ export default function App() {
             {/* SCHEDULES */}
             {activeTab === "schedules" && (
               <div className="space-y-6 animate-in fade-in duration-500">
-                <h1 className="text-3xl font-bold text-pink-900">Schedules📅</h1>
+                <h1 className="text-3xl font-bold text-pink-900">Dearest Schedules📅</h1>
                 <form onSubmit={addSchedules} className="bg-white p-4 rounded-2xl border border-pink-100 shadow-sm flex flex-wrap gap-3">
                   <input type="text" value={newSchedules.title} onChange={(e) => setNewSchedules({ ...newSchedules, title: e.target.value })} placeholder="Type your scheduleヾ(＠⌒ー⌒＠)ノ" required className="flex-1 min-w-[150px] bg-pink-50 border border-pink-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400" />
                   <input type="time" value={newSchedules.time} onChange={(e) => setNewSchedules({ ...newSchedules, time: e.target.value })} required className="w-32 bg-pink-50 border border-pink-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400" />
@@ -709,7 +709,7 @@ export default function App() {
             {/* COURSES */}
             {activeTab === "courses" && (
               <div className="space-y-6 animate-in fade-in duration-500">
-                <h1 className="text-3xl font-bold text-pink-900">Your Courses📚</h1>
+                <h1 className="text-3xl font-bold text-pink-900">Dearest Courses📚</h1>
                 <form onSubmit={addCourse} className="bg-white p-4 rounded-2xl border border-pink-100 shadow-sm flex flex-wrap gap-3">
                   <input type="text" value={newCourse.code} onChange={(e) => setNewCourse({ ...newCourse, code: e.target.value })} placeholder="Room (e.g., CS101)" required className="w-36 bg-pink-50 border border-pink-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400" />
                   <input type="text" value={newCourse.name} onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })} placeholder="Course Name" required className="flex-1 min-w-[200px] bg-pink-50 border border-pink-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400" />
@@ -733,7 +733,7 @@ export default function App() {
             {/* NOTES */}
             {activeTab === "notes" && (
               <div className="space-y-6 animate-in fade-in duration-500">
-                <h1 className="text-3xl font-bold text-pink-900">Your Dearest Notes📝</h1>
+                <h1 className="text-3xl font-bold text-pink-900">Dearest Notes📝</h1>
                 <form onSubmit={addNote} className="bg-white p-5 rounded-2xl border border-pink-100 shadow-sm flex flex-col gap-3">
                   <input type="text" value={newNote.title} onChange={(e) => setNewNote({ ...newNote, title: e.target.value })} placeholder="Note Title" className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400" />
                   <textarea value={newNote.content} onChange={(e) => setNewNote({ ...newNote, content: e.target.value })} placeholder="Write your thoughts here..." rows={3} className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 resize-none" />
