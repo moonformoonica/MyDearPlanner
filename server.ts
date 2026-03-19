@@ -31,9 +31,11 @@ async function startServer() {
     try {
       pool = mysql.createPool({
         host: process.env.DB_HOST,
+        port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
         user: process.env.DB_USER || "root",
         password: process.env.DB_PASSWORD || "",
         database: process.env.DB_NAME || "dearplanner",
+        ssl: { rejectUnauthorized: false }, // Wajib untuk Cloud Database
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
