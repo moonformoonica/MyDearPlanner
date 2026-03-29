@@ -68,8 +68,7 @@ export default function App() {
     confirmPassword: "",
   });
 
-  // --- APP STATE ---
-  // FIX 1: Sidebar default tertutup di mobile, terbuka di desktop
+  // Sidebar & UI State
   const [isSidebarOpen, setIsSidebarOpen] = useState(
     typeof window !== "undefined" ? window.innerWidth >= 768 : true,
   );
@@ -622,7 +621,6 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-[#FFF0F5] text-slate-800 font-sans overflow-hidden">
-
       {/* FIX 3: Overlay backdrop — klik di luar sidebar untuk menutup di mobile */}
       {isSidebarOpen && (
         <div
@@ -1245,10 +1243,22 @@ export default function App() {
                 </form>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {notes.map((note) => (
-                    <div key={note.id} className="bg-yellow-50 rounded-2xl p-5 border border-yellow-200 relative group">
-                      <button onClick={() => deleteNote(note.id)} className="absolute top-4 right-4 text-yellow-400 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 size={18} /></button>
-                      <h3 className="font-bold text-yellow-900 mb-2">{note.title}</h3>
-                      <p className="text-sm text-yellow-800 whitespace-pre-wrap break-all">{note.content}</p>
+                    <div
+                      key={note.id}
+                      className="bg-yellow-50 rounded-2xl p-5 border border-yellow-200 relative group"
+                    >
+                      <button
+                        onClick={() => deleteNote(note.id)}
+                        className="absolute top-4 right-4 text-yellow-400 hover:text-red-500 opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                      <h3 className="font-bold text-yellow-900 mb-2">
+                        {note.title}
+                      </h3>
+                      <p className="text-sm text-yellow-800 whitespace-pre-wrap break-all">
+                        {note.content}
+                      </p>
                     </div>
                   ))}
                 </div>
