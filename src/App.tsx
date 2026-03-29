@@ -58,20 +58,23 @@ export default function App() {
     JSON.parse(localStorage.getItem("user") || "null"),
   );
 
-  const[loginForm, setLoginForm] = useState({ username: "", password: "" });
+  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [loginError, setLoginError] = useState("");
 
   const [isRegistering, setIsRegistering] = useState(false);
-  const[registerForm, setRegisterForm] = useState({
+  const [registerForm, setRegisterForm] = useState({
     username: "",
     password: "",
     confirmPassword: "",
   });
 
   // --- APP STATE ---
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // FIX 1: Sidebar default tertutup di mobile, terbuka di desktop
+  const [isSidebarOpen, setIsSidebarOpen] = useState(
+    typeof window !== "undefined" ? window.innerWidth >= 768 : true,
+  );
   const [activeTab, setActiveTab] = useState("dashboard");
-  const[quote, setQuote] = useState<{ quote: string; author: string } | null>(
+  const [quote, setQuote] = useState<{ quote: string; author: string } | null>(
     null,
   );
   const [quoteAnim, setQuoteAnim] = useState<
@@ -79,7 +82,6 @@ export default function App() {
   >("entering");
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Pinterest State
   // Pinterest State
   const [pinterestPins, setPinterestPins] = useState<string[]>([
     "",
@@ -92,7 +94,7 @@ export default function App() {
   const [isFadingPins, setIsFadingPins] = useState(false);
 
   const [tasks, setTasks] = useState<Task[]>([]);
-  const[courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [schedules, setSchedules] = useState<Schedules[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
 
@@ -117,8 +119,16 @@ export default function App() {
 
   // Settings state
   const [newPassword, setNewPassword] = useState("");
-  const[settingsMsg, setSettingsMsg] = useState("");
+  const [settingsMsg, setSettingsMsg] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // FIX 2: Handler navigasi — auto close sidebar di mobile
+  const handleNavClick = (tabId: string) => {
+    setActiveTab(tabId);
+    if (window.innerWidth < 768) {
+      setIsSidebarOpen(false);
+    }
+  };
 
   const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
     const headers = {
@@ -175,19 +185,19 @@ export default function App() {
     const quoteTimer = setInterval(() => fetchQuote(false), 3773);
 
     fetchWithAuth("/api/tasks")
-      .then((res) => (res.ok ? res.json() :[]))
+      .then((res) => (res.ok ? res.json() : []))
       .then(setTasks)
       .catch(() => {});
     fetchWithAuth("/api/courses")
-      .then((res) => (res.ok ? res.json() :[]))
+      .then((res) => (res.ok ? res.json() : []))
       .then(setCourses)
       .catch(() => {});
     fetchWithAuth("/api/schedules")
-      .then((res) => (res.ok ? res.json() :[]))
+      .then((res) => (res.ok ? res.json() : []))
       .then(setSchedules)
       .catch(() => {});
     fetchWithAuth("/api/notes")
-      .then((res) => (res.ok ? res.json() :[]))
+      .then((res) => (res.ok ? res.json() : []))
       .then(setNotes)
       .catch(() => {});
 
@@ -590,7 +600,7 @@ export default function App() {
   }
 
   // --- RENDER MAIN APP ---
-  const navItems =[
+  const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "tasks", label: "To Do List", icon: BookOpenCheck },
     { id: "schedules", label: "Schedules", icon: CalendarDays },
@@ -612,11 +622,22 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-[#FFF0F5] text-slate-800 font-sans overflow-hidden">
-      {/* Sidebar */}
+
+      {/* FIX 3: Overlay backdrop — klik di luar sidebar untuk menutup di mobile */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-20 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* FIX 4: Sidebar — fixed di mobile, relative di desktop */}
       <aside
         className={cn(
-          "bg-pink-100/80 backdrop-blur-md border-r border-pink-200 transition-all duration-300 flex flex-col",
-          isSidebarOpen ? "w-64" : "w-0 opacity-0 md:w-20 md:opacity-100",
+          "fixed md:relative z-30 md:z-auto h-full bg-pink-100/80 backdrop-blur-md border-r border-pink-200 transition-all duration-300 flex flex-col",
+          isSidebarOpen
+            ? "w-64 translate-x-0"
+            : "-translate-x-full md:translate-x-0 md:w-20",
         )}
       >
         <div className="p-4 flex items-center justify-between">
@@ -665,7 +686,7 @@ export default function App() {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => handleNavClick(item.id)}
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                   activeTab === item.id
