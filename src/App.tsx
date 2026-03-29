@@ -721,7 +721,7 @@ export default function App() {
                   {courses.map((course) => (
                     <div key={course.id} className="bg-white rounded-2xl p-5 border border-pink-100 shadow-sm relative group">
                       <button onClick={() => deleteCourse(course.id)} className="absolute top-4 right-4 text-pink-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 size={18} /></button>
-                      <div className="w-12 h-12 bg-pink-100 text-pink-600 rounded-xl flex items-center justify-center font-bold mb-4">{course.code}</div>
+                      <div className="w-fit min-w-[3rem] px-3 h-10 bg-pink-100 text-pink-600 rounded-xl flex items-center justify-center font-bold mb-4 whitespace-nowrap">{course.code}</div>
                       <h3 className="font-bold text-slate-800 text-lg mb-1 leading-tight">{course.name}</h3>
                       <p className="text-pink-500 text-sm flex items-center gap-2"><User size={14} /> {course.professor}</p>
                     </div>
