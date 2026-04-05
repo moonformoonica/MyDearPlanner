@@ -17,14 +17,14 @@ async function startServer() {
 
   app.use(express.json({ limit: "10mb" }));
 
-  // --- IN-MEMORY FALLBACK DATA ---
+  // In-Memory Fallback Data
   let memoryUsers: any[] = [];
   let memoryTasks: any[] = [];
   let memoryCourses: any[] = [];
   let memorySchedules: any[] = [];
   let memoryNotes: any[] = [];
 
-  // --- DATABASE CONFIGURATION ---
+  // Database Configuration
   let pool: mysql.Pool | null = null;
 
   if (process.env.DB_HOST) {
@@ -59,7 +59,7 @@ async function startServer() {
       ];
       for (const query of tables) await pool.query(query);
 
-      // 🛠️ AUTO-PATCH: Tambahkan kolom user_id ke tabel lama jika belum ada
+      // Auto-patch nambahin kolom user_id ke tabel lama yang belum ada
       const patchTables = ["tasks", "courses", "schedules", "notes"];
       for (const table of patchTables) {
         try {
@@ -68,7 +68,7 @@ async function startServer() {
           );
           console.log(`🔧 Patched table '${table}' with user_id column.`);
         } catch (err: any) {
-          // Abaikan error jika kolom sudah ada
+          // Abaikan error kalo kolom sudah ada
         }
       }
 
@@ -103,7 +103,7 @@ async function startServer() {
     console.log("⚠️ Using In-Memory Database. Default user created.");
   }
 
-  // --- MIDDLEWARE ---
+  // Middleware
   const authenticateToken = (req: any, res: any, next: any) => {
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];
@@ -117,7 +117,7 @@ async function startServer() {
     });
   };
 
-  // --- AUTHENTICATION API ---
+  // Auth APIs
   app.post("/api/login", async (req, res) => {
     try {
       const { username, password } = req.body;
@@ -156,7 +156,7 @@ async function startServer() {
     }
   });
 
-  // --- REGISTER API ---
+  // Regist API
   app.post("/api/register", async (req, res) => {
     try {
       const { username, password } = req.body;
@@ -267,7 +267,7 @@ async function startServer() {
     },
   );
 
-  // --- CRUD API ---
+  // CRUD APIs for Tasks, Courses, Schedules, Notes
   app.get("/api/tasks", authenticateToken, async (req: any, res) => {
     try {
       if (pool) {

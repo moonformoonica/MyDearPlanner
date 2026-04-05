@@ -50,7 +50,7 @@ type Note = { id: string; title: string; content: string; date: string };
 type UserData = { id: string; username: string; profile_pic: string };
 
 export default function App() {
-  // --- AUTH STATE ---
+  // Auth State
   const [token, setToken] = useState<string | null>(
     localStorage.getItem("token"),
   );
@@ -97,7 +97,7 @@ export default function App() {
   const [schedules, setSchedules] = useState<Schedules[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
 
-  // Form states
+  // Form States
   const [newTask, setNewTask] = useState({
     title: "",
     dueDate: format(new Date(), "yyyy-MM-dd"),
@@ -116,12 +116,12 @@ export default function App() {
   });
   const [newNote, setNewNote] = useState({ title: "", content: "" });
 
-  // Settings state
+  // Settings State
   const [newPassword, setNewPassword] = useState("");
   const [settingsMsg, setSettingsMsg] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // FIX 2: Handler navigasi — auto close sidebar di mobile
+  // Auto Close Sidebar Di Mobile
   const handleNavClick = (tabId: string) => {
     setActiveTab(tabId);
     if (window.innerWidth < 768) {
@@ -145,7 +145,7 @@ export default function App() {
     return res;
   };
 
-  // Fetch Data & Public API Quote
+  // Fetch Data Public API Quote
   useEffect(() => {
     if (!token) return;
 
@@ -207,7 +207,7 @@ export default function App() {
     };
   }, [token]);
 
-  // Fetch Pinterest Pins
+  // Fetch Data Pinterest Board Pins
   useEffect(() => {
     if (!token) return;
     fetch(
@@ -245,7 +245,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, [token, pinterestPins]);
 
-  // --- AUTH LOGIC ---
+  // Auth Logic
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
@@ -329,7 +329,7 @@ export default function App() {
     setUser(null);
   };
 
-  // --- SETTINGS LOGIC ---
+  // Settings Logic
   const handleProfilePicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -366,7 +366,7 @@ export default function App() {
     }
   };
 
-  // --- CRUD FUNCTIONS ---
+  // CRUD Functions
   const addTask = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetchWithAuth("/api/tasks", {
@@ -450,7 +450,7 @@ export default function App() {
     if (res.ok) setNotes(notes.filter((n) => n.id !== id));
   };
 
-  // --- RENDER LOGIN/REGISTER SCREEN ---
+  // Render Login & Regist Page
   if (!token) {
     return (
       <div className="min-h-screen bg-[#FFF0F5] flex items-center justify-center p-4">
@@ -598,7 +598,7 @@ export default function App() {
     );
   }
 
-  // --- RENDER MAIN APP ---
+  // Render Main Features App
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "tasks", label: "To Do List", icon: BookOpenCheck },
@@ -621,7 +621,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-[#FFF0F5] text-slate-800 font-sans overflow-hidden">
-      {/* FIX 3: Overlay backdrop — klik di luar sidebar untuk menutup di mobile */}
+      {/* Overlay backdrop biar kalo klik di luar sidebar jadi auto close di mobile */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black/40 z-20 md:hidden"
@@ -629,7 +629,7 @@ export default function App() {
         />
       )}
 
-      {/* FIX 4: Sidebar — fixed di mobile, relative di desktop */}
+      {/* Sidebar fixed di mobile supaya jadi auto close kalo tiap pindah feature,tp ttp relative di desktop */}
       <aside
         className={cn(
           "fixed md:relative z-30 md:z-auto h-full bg-pink-100/80 backdrop-blur-md border-r border-pink-200 transition-all duration-300 flex flex-col",
