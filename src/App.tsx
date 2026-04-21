@@ -21,11 +21,19 @@ import {
   BookHeart,
   NotebookPen,
   Shell,
+  Sparkles,
+  Crown,
+  Palette,
 } from "lucide-react";
 import { format } from "date-fns";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+declare global {
+  interface Window {
+    snap: any;
+  }
+}
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -47,10 +55,15 @@ type Schedules = {
   type: string;
 };
 type Note = { id: string; title: string; content: string; date: string };
-type UserData = { id: string; username: string; profile_pic: string };
+type UserData = {
+  id: string;
+  username: string;
+  profile_pic: string;
+  is_premium?: boolean;
+  theme?: string;
+};
 
 export default function App() {
-  // Auth State
   const [token, setToken] = useState<string | null>(
     localStorage.getItem("token"),
   );
@@ -60,7 +73,6 @@ export default function App() {
 
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [loginError, setLoginError] = useState("");
-
   const [isRegistering, setIsRegistering] = useState(false);
   const [registerForm, setRegisterForm] = useState({
     username: "",
@@ -68,7 +80,6 @@ export default function App() {
     confirmPassword: "",
   });
 
-  // Sidebar & UI State
   const [isSidebarOpen, setIsSidebarOpen] = useState(
     typeof window !== "undefined" ? window.innerWidth >= 768 : true,
   );
@@ -81,7 +92,6 @@ export default function App() {
   >("entering");
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Pinterest State
   const [pinterestPins, setPinterestPins] = useState<string[]>([
     "",
     "",
@@ -97,7 +107,6 @@ export default function App() {
   const [schedules, setSchedules] = useState<Schedules[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
 
-  // Form States
   const [newTask, setNewTask] = useState({
     title: "",
     dueDate: format(new Date(), "yyyy-MM-dd"),
@@ -116,17 +125,13 @@ export default function App() {
   });
   const [newNote, setNewNote] = useState({ title: "", content: "" });
 
-  // Settings State
   const [newPassword, setNewPassword] = useState("");
   const [settingsMsg, setSettingsMsg] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto Close Sidebar Di Mobile
   const handleNavClick = (tabId: string) => {
     setActiveTab(tabId);
-    if (window.innerWidth < 768) {
-      setIsSidebarOpen(false);
-    }
+    if (window.innerWidth < 768) setIsSidebarOpen(false);
   };
 
   const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
@@ -134,21 +139,28 @@ export default function App() {
       ...options.headers,
       Authorization: `Bearer ${token}`,
     } as any;
-    if (
-      !(options.body instanceof FormData) &&
-      typeof options.body === "string"
-    ) {
+    if (!(options.body instanceof FormData) && typeof options.body === "string")
       headers["Content-Type"] = "application/json";
-    }
     const res = await fetch(url, { ...options, headers });
     if (res.status === 401 || res.status === 403) handleLogout();
     return res;
   };
 
-  // Fetch Data Public API Quote
+  useEffect(() => {
+    const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
+    const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY || "";
+    let scriptTag = document.createElement("script");
+    scriptTag.src = snapScript;
+    scriptTag.setAttribute("data-client-key", clientKey);
+    scriptTag.async = true;
+    document.body.appendChild(scriptTag);
+    return () => {
+      document.body.removeChild(scriptTag);
+    };
+  }, []);
+
   useEffect(() => {
     if (!token) return;
-
     const fetchQuote = (isInitial = false) => {
       if (!isInitial) setQuoteAnim("exiting");
       setTimeout(
@@ -156,14 +168,8 @@ export default function App() {
           fetch("https://dummyjson.com/quotes/random")
             .then((res) => res.json())
             .then((data) => {
-              if (data && data.quote) {
+              if (data && data.quote)
                 setQuote({ quote: data.quote, author: data.author });
-              } else {
-                setQuote({
-                  quote: "The secret of getting ahead is getting started.",
-                  author: "Mark Twain",
-                });
-              }
               setQuoteAnim("entering");
               setTimeout(() => setQuoteAnim("entered"), 50);
             })
@@ -179,7 +185,6 @@ export default function App() {
         isInitial ? 0 : 500,
       );
     };
-
     fetchQuote(true);
     const quoteTimer = setInterval(() => fetchQuote(false), 3773);
 
@@ -207,7 +212,6 @@ export default function App() {
     };
   }, [token]);
 
-  // Fetch Data Pinterest Board Pins
   useEffect(() => {
     if (!token) return;
     fetch(
@@ -219,20 +223,17 @@ export default function App() {
           const imageUrls = data.items
             .map((item: any) => {
               const match = item.description.match(/src="([^"]+)"/);
-              let url = match ? match[1] : null;
-              if (url) url = url.replace("236x", "736x");
-              return url;
+              return match ? match[1].replace("236x", "736x") : null;
             })
             .filter(Boolean);
           if (imageUrls.length >= 5) setPinterestPins(imageUrls);
         }
       })
-      .catch((err) => console.error("Error fetching Pinterest feed:", err));
+      .catch(() => {});
   }, [token]);
 
-  // Pinterest Slideshow Timer
   useEffect(() => {
-    if (!token || pinterestPins.length <= 5) return;
+    if (!token || pinterestPins[0] === "") return;
     const interval = setInterval(() => {
       setIsFadingPins(true);
       setTimeout(() => {
@@ -245,7 +246,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, [token, pinterestPins]);
 
-  // Auth Logic
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
@@ -260,16 +260,13 @@ export default function App() {
         throw new Error(
           "Server is down! Did you restart the backend terminal? 💻",
         );
-
       let data;
       try {
         data = JSON.parse(text);
       } catch (e) {
         throw new Error("Server Error!");
       }
-
       if (!res.ok) throw new Error(data.error);
-
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       setToken(data.token);
@@ -282,12 +279,8 @@ export default function App() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
-
-    if (registerForm.password !== registerForm.confirmPassword) {
-      setLoginError("Passwords don't match! (＞﹏＜)");
-      return;
-    }
-
+    if (registerForm.password !== registerForm.confirmPassword)
+      return setLoginError("Passwords don't match! (＞﹏＜)");
     try {
       const res = await fetch("/api/register", {
         method: "POST",
@@ -297,22 +290,18 @@ export default function App() {
           password: registerForm.password,
         }),
       });
-
       const text = await res.text();
       if (!text)
         throw new Error(
           "Server didn't respond! Did you restart the backend? 🥺",
         );
-
       let data;
       try {
         data = JSON.parse(text);
       } catch (err) {
         throw new Error("Server error! Check VS Code terminal 💻");
       }
-
       if (!res.ok) throw new Error(data.error || "Failed to register");
-
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       setToken(data.token);
@@ -329,22 +318,47 @@ export default function App() {
     setUser(null);
   };
 
-  // Settings Logic
-  const handleProfilePicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpgradePremium = async () => {
+    try {
+      const response = await fetchWithAuth("/api/premium/checkout", {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      window.snap.pay(data.token, {
+        onSuccess: function () {
+          alert(
+            "Yeay! Pembayaran sukses! Coba logout dan login lagi ya biar status premiumnya aktif. 💖",
+          );
+        },
+        onPending: function () {
+          alert("Pembayaran tertunda. Selesaikan di aplikasimu ya! ⏳");
+        },
+        onError: function () {
+          alert("Duh, pembayarannya gagal. Coba lagi nanti ya! 🥺");
+        },
+      });
+    } catch (error) {
+      alert("Waduh, gagal menyambung ke Midtrans.");
+    }
+  };
+
+  const handleProfilePicChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onloadend = async () => {
-      const base64String = reader.result as string;
       const res = await fetchWithAuth("/api/user/profile", {
         method: "PUT",
-        body: JSON.stringify({ profile_pic: base64String }),
+        body: JSON.stringify({ profile_pic: reader.result as string }),
       });
       if (res.ok) {
-        const updatedUser = await res.json();
-        setUser(updatedUser);
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+        const updated = await res.json();
+        setUser(updated);
+        localStorage.setItem("user", JSON.stringify(updated));
         setSettingsMsg("Profile picture updated! 🖼️");
         setTimeout(() => setSettingsMsg(""), 3000);
       }
@@ -366,7 +380,25 @@ export default function App() {
     }
   };
 
-  // CRUD Functions
+  // --- Exclusive Themes For Premium User ---
+  const handleThemeChange = async (newTheme: string) => {
+    if (!user?.is_premium && newTheme !== "pink") {
+      alert("Upgrade ke PRO dulu ya untuk pakai tema eksklusif ini! 👑✨");
+      setActiveTab("premium");
+      return;
+    }
+    setUser({ ...user!, theme: newTheme });
+    const res = await fetchWithAuth("/api/user/profile", {
+      method: "PUT",
+      body: JSON.stringify({ theme: newTheme }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setUser(updated);
+      localStorage.setItem("user", JSON.stringify(updated));
+    }
+  };
+
   const addTask = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetchWithAuth("/api/tasks", {
@@ -390,9 +422,10 @@ export default function App() {
       method: "PUT",
       body: JSON.stringify(updatedTask),
     });
+
     if (res.ok) {
-      const updated = await res.json();
-      setTasks(tasks.map((t) => (t.id === task.id ? updated : t)));
+      const updatedData = await res.json();
+      setTasks(tasks.map((t) => (t.id === task.id ? updatedData : t)));
     }
   };
   const deleteTask = async (id: string) => {
@@ -450,7 +483,6 @@ export default function App() {
     if (res.ok) setNotes(notes.filter((n) => n.id !== id));
   };
 
-  // Render Login & Regist Page
   if (!token) {
     return (
       <div className="min-h-screen bg-[#FFF0F5] flex items-center justify-center p-4">
@@ -468,7 +500,6 @@ export default function App() {
               ? "Create an account to start your journey! (✿◡‿◡)"
               : "Would you login to your Dear Planner? (❁´◡`❁)"}
           </p>
-
           {loginError && (
             <div className="bg-red-50 text-red-500 p-3 rounded-xl text-sm mb-4 text-center">
               {loginError}
@@ -477,60 +508,39 @@ export default function App() {
 
           {isRegistering ? (
             <form onSubmit={handleRegister} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-pink-700 mb-1">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  value={registerForm.username}
-                  onChange={(e) =>
-                    setRegisterForm({
-                      ...registerForm,
-                      username: e.target.value,
-                    })
-                  }
-                  className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400"
-                  placeholder="Choose a cute username"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-pink-700 mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={registerForm.password}
-                  onChange={(e) =>
-                    setRegisterForm({
-                      ...registerForm,
-                      password: e.target.value,
-                    })
-                  }
-                  className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400"
-                  placeholder="Create a strong password"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-pink-700 mb-1">
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  value={registerForm.confirmPassword}
-                  onChange={(e) =>
-                    setRegisterForm({
-                      ...registerForm,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400"
-                  placeholder="Type password again"
-                  required
-                />
-              </div>
+              <input
+                type="text"
+                value={registerForm.username}
+                onChange={(e) =>
+                  setRegisterForm({ ...registerForm, username: e.target.value })
+                }
+                className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                placeholder="Choose a cute username"
+                required
+              />
+              <input
+                type="password"
+                value={registerForm.password}
+                onChange={(e) =>
+                  setRegisterForm({ ...registerForm, password: e.target.value })
+                }
+                className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                placeholder="Create a strong password"
+                required
+              />
+              <input
+                type="password"
+                value={registerForm.confirmPassword}
+                onChange={(e) =>
+                  setRegisterForm({
+                    ...registerForm,
+                    confirmPassword: e.target.value,
+                  })
+                }
+                className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                placeholder="Type password again"
+                required
+              />
               <button
                 type="submit"
                 className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-xl transition-colors mt-4"
@@ -540,36 +550,26 @@ export default function App() {
             </form>
           ) : (
             <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-pink-700 mb-1">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  value={loginForm.username}
-                  onChange={(e) =>
-                    setLoginForm({ ...loginForm, username: e.target.value })
-                  }
-                  className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400"
-                  placeholder="youngest333daughter"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-pink-700 mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={loginForm.password}
-                  onChange={(e) =>
-                    setLoginForm({ ...loginForm, password: e.target.value })
-                  }
-                  className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400"
-                  placeholder="Guess the password silly...o(一︿一+)o"
-                  required
-                />
-              </div>
+              <input
+                type="text"
+                value={loginForm.username}
+                onChange={(e) =>
+                  setLoginForm({ ...loginForm, username: e.target.value })
+                }
+                className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                placeholder="youngest333daughter"
+                required
+              />
+              <input
+                type="password"
+                value={loginForm.password}
+                onChange={(e) =>
+                  setLoginForm({ ...loginForm, password: e.target.value })
+                }
+                className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                placeholder="Guess the password silly...o(一︿一+)o"
+                required
+              />
               <button
                 type="submit"
                 className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-xl transition-colors mt-4"
@@ -598,13 +598,13 @@ export default function App() {
     );
   }
 
-  // Render Main Features App
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "tasks", label: "To Do List", icon: BookOpenCheck },
     { id: "schedules", label: "Schedules", icon: CalendarDays },
     { id: "courses", label: "Courses", icon: LibraryBig },
     { id: "notes", label: "Notes", icon: NotebookPen },
+    { id: "premium", label: "DearPremium ✨", icon: Sparkles },
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -618,10 +618,15 @@ export default function App() {
   const displayName = user?.username
     ? user.username.charAt(0).toUpperCase() + user.username.slice(1)
     : "Student";
+  const selectedTheme = user?.theme || "pink";
 
   return (
-    <div className="flex h-screen bg-[#FFF0F5] text-slate-800 font-sans overflow-hidden">
-      {/* Overlay backdrop biar kalo klik di luar sidebar jadi auto close di mobile */}
+    <div
+      className={cn(
+        "flex h-screen bg-[#FFF0F5] text-slate-800 font-sans overflow-hidden transition-all duration-1000",
+        selectedTheme !== "pink" ? `theme-${selectedTheme}` : "",
+      )}
+    >
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black/40 z-20 md:hidden"
@@ -629,7 +634,6 @@ export default function App() {
         />
       )}
 
-      {/* Sidebar fixed di mobile supaya jadi auto close kalo tiap pindah feature,tp ttp relative di desktop */}
       <aside
         className={cn(
           "fixed md:relative z-30 md:z-auto h-full bg-pink-100/80 backdrop-blur-md border-r border-pink-200 transition-all duration-300 flex flex-col",
@@ -660,10 +664,15 @@ export default function App() {
 
         <div
           className={cn(
-            "px-4 py-4 mb-2 flex flex-col items-center border-b border-pink-200/50",
+            "px-4 py-4 mb-2 flex flex-col items-center border-b border-pink-200/50 relative",
             !isSidebarOpen && "md:hidden",
           )}
         >
+          {user?.is_premium && (
+            <div className="absolute top-2 right-4 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
+              <Crown size={12} /> PRO
+            </div>
+          )}
           <div className="w-16 h-16 rounded-full bg-pink-200 border-2 border-white shadow-sm overflow-hidden mb-2 flex items-center justify-center">
             {user?.profile_pic ? (
               <img
@@ -693,7 +702,7 @@ export default function App() {
                   !isSidebarOpen && "md:justify-center",
                 )}
               >
-                <Icon size={18} />
+                <Icon size={18} />{" "}
                 <span className={cn(!isSidebarOpen && "md:hidden")}>
                   {item.label}
                 </span>
@@ -709,13 +718,12 @@ export default function App() {
               !isSidebarOpen && "md:justify-center",
             )}
           >
-            <LogOut size={18} />
+            <LogOut size={18} />{" "}
             <span className={cn(!isSidebarOpen && "md:hidden")}>Logout</span>
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-white/40">
         <header className="h-14 border-b border-pink-100 flex items-center justify-between px-4 bg-white/60 backdrop-blur-sm">
           <div className="flex items-center">
@@ -744,7 +752,6 @@ export default function App() {
 
         <div className="flex-1 overflow-y-auto p-6 md:p-10">
           <div className="max-w-4xl mx-auto">
-            {/* DASHBOARD */}
             {activeTab === "dashboard" && (
               <div className="space-y-8 animate-in fade-in duration-500">
                 <div>
@@ -756,7 +763,6 @@ export default function App() {
                     {format(currentTime, "EEEE, MMMM do")}.
                   </p>
                 </div>
-
                 {quote && (
                   <div className="relative p-[3px] rounded-[19px] overflow-hidden shadow-sm z-10 flex flex-col">
                     <div className="absolute inset-[-100%] glow-bg-quotes -z-10"></div>
@@ -786,7 +792,6 @@ export default function App() {
                     </div>
                   </div>
                 )}
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="relative p-[3px] rounded-[19px] overflow-hidden shadow-sm z-10 flex flex-col">
                     <div className="absolute inset-[-100%] glow-bg-left -z-10"></div>
@@ -834,7 +839,6 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-
                   <div className="relative p-[3px] rounded-[19px] overflow-hidden shadow-sm z-10 flex flex-col">
                     <div className="absolute inset-[-100%] glow-bg-right -z-10"></div>
                     <div className="bg-white rounded-2xl p-6 flex-1 h-full z-10">
@@ -874,7 +878,6 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-
                 <div className="mt-8 animate-in fade-in duration-377 delay-377">
                   <h2 className="text-xl font-bold text-pink-900 mb-4 flex items-center gap-2">
                     <Shell size={24} className="text-pink-500" /> The Board Of
@@ -890,7 +893,6 @@ export default function App() {
                         <div className="bg-white rounded-2xl p-1 flex-1 h-full z-10 overflow-hidden relative">
                           <img
                             src={pinterestPins[pinIdx]}
-                            alt="Pinterest Inspiration"
                             className={cn(
                               "w-full h-full object-cover rounded-xl transition-opacity duration-1000",
                               isFadingPins ? "opacity-0" : "opacity-100",
@@ -904,7 +906,6 @@ export default function App() {
               </div>
             )}
 
-            {/* TASKS */}
             {activeTab === "tasks" && (
               <div className="space-y-6 animate-in fade-in duration-500">
                 <div className="flex items-center justify-between">
@@ -915,7 +916,6 @@ export default function App() {
                     {tasks.filter((t) => !t.completed).length} pending
                   </span>
                 </div>
-
                 <form onSubmit={addTask} className="flex flex-wrap gap-2">
                   <input
                     type="text"
@@ -953,7 +953,6 @@ export default function App() {
                     Add Task
                   </button>
                 </form>
-
                 <div className="bg-white rounded-2xl border border-pink-100 shadow-sm overflow-hidden">
                   {tasks.length === 0 ? (
                     <div className="p-8 text-center text-pink-400">
@@ -1013,7 +1012,6 @@ export default function App() {
               </div>
             )}
 
-            {/* SCHEDULES */}
             {activeTab === "schedules" && (
               <div className="space-y-6 animate-in fade-in duration-500">
                 <h1 className="text-3xl font-bold text-pink-900">
@@ -1084,7 +1082,6 @@ export default function App() {
                     <Plus size={20} />
                   </button>
                 </form>
-
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
                   {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map(
                     (day) => (
@@ -1129,7 +1126,6 @@ export default function App() {
               </div>
             )}
 
-            {/* COURSES */}
             {activeTab === "courses" && (
               <div className="space-y-6 animate-in fade-in duration-500">
                 <h1 className="text-3xl font-bold text-pink-900">
@@ -1176,7 +1172,6 @@ export default function App() {
                     <Plus size={20} />
                   </button>
                 </form>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {courses.map((course) => (
                     <div
@@ -1204,7 +1199,6 @@ export default function App() {
               </div>
             )}
 
-            {/* NOTES */}
             {activeTab === "notes" && (
               <div className="space-y-6 animate-in fade-in duration-500">
                 <h1 className="text-3xl font-bold text-pink-900">
@@ -1265,7 +1259,61 @@ export default function App() {
               </div>
             )}
 
-            {/* SETTINGS */}
+            {/* Upgrade Pro Page */}
+            {activeTab === "premium" && (
+              <div className="space-y-6 animate-in fade-in duration-500 text-center flex flex-col items-center justify-center min-h-[60vh]">
+                <div className="bg-gradient-to-tr from-pink-200 to-yellow-100 p-8 rounded-3xl shadow-lg border border-yellow-200 max-w-md w-full relative overflow-hidden">
+                  {user?.is_premium && (
+                    <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 font-bold px-4 py-1 rounded-bl-xl text-sm">
+                      ACTIVE
+                    </div>
+                  )}
+                  <Sparkles
+                    size={64}
+                    className="text-yellow-500 mx-auto mb-4"
+                  />
+                  <h1 className="text-3xl font-bold text-pink-900 mb-2">
+                    My Dear Planner <span className="text-yellow-600">PRO</span>
+                  </h1>
+                  {user?.is_premium ? (
+                    <div>
+                      <p className="text-pink-700 mb-6">
+                        Terima kasih, Dear! Kamu sudah menjadi member
+                        DearPremium for life! 💖 Nikmati semua fitur tema
+                        eksklusif di tab Settings!
+                      </p>
+                      <button
+                        disabled
+                        className="bg-gray-300 text-gray-500 font-bold py-3 px-8 rounded-xl w-full cursor-not-allowed"
+                      >
+                        DearPremium Aktif
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-pink-700 mb-6">
+                        Dukung terus My Dear Planner agar bebas iklan, dan
+                        dapatkan akses ke tema warna eksklusif!
+                      </p>
+                      <h2 className="text-4xl font-extrabold text-pink-500 mb-6">
+                        Rp 15.000
+                        <span className="text-sm text-pink-400">
+                          /selamanya
+                        </span>
+                      </h2>
+                      <button
+                        onClick={handleUpgradePremium}
+                        className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-8 rounded-xl w-full shadow-md transition-transform hover:scale-105 flex items-center justify-center gap-2"
+                      >
+                        Bayar Pakai QRIS <Sparkles size={18} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Settings for Themes Choices */}
             {activeTab === "settings" && (
               <div className="space-y-6 animate-in fade-in duration-500 max-w-2xl">
                 <h1 className="text-3xl font-bold text-pink-900 mb-6">
@@ -1309,6 +1357,37 @@ export default function App() {
                     >
                       <Upload size={16} /> Choose Image
                     </button>
+                  </div>
+                </div>
+
+                {/* Themes Menu*/}
+                <div className="bg-white p-6 rounded-2xl border border-pink-100 shadow-sm">
+                  <h3 className="font-bold text-pink-900 text-lg mb-4 flex items-center gap-2">
+                    <Palette className="text-pink-500" /> Exclusive Themes
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {["pink", "lavender", "matcha", "ocean"].map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => handleThemeChange(t)}
+                        className={cn(
+                          "p-4 rounded-xl border-2 font-bold capitalize transition-all relative overflow-hidden",
+                          selectedTheme === t
+                            ? "border-pink-500 text-pink-600 bg-pink-50"
+                            : "border-gray-200 text-gray-500 hover:border-pink-300",
+                          !user?.is_premium &&
+                            t !== "pink" &&
+                            "opacity-60 cursor-not-allowed bg-gray-50",
+                        )}
+                      >
+                        {t}
+                        {!user?.is_premium && t !== "pink" && (
+                          <div className="absolute top-1 right-1">
+                            <Crown size={14} className="text-yellow-500" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
