@@ -183,18 +183,16 @@ async function startServer() {
       }
 
       const token = jwt.sign({ id: newUserId, username }, JWT_SECRET);
-      res
-        .status(201)
-        .json({
-          token,
-          user: {
-            id: newUserId,
-            username,
-            profile_pic: "",
-            is_premium: false,
-            theme: "pink",
-          },
-        });
+      res.status(201).json({
+        token,
+        user: {
+          id: newUserId,
+          username,
+          profile_pic: "",
+          is_premium: false,
+          theme: "pink",
+        },
+      });
     } catch (error) {
       res.status(500).json({ error: "Server error" });
     }
@@ -267,12 +265,13 @@ async function startServer() {
               id: "PREMIUM-PLAN",
               price: 15000,
               quantity: 1,
-              name: "My Dear Planner Premium 👑",
+              name: "My Dear Planner Premium",
             },
           ],
         });
         res.json({ token: transaction.token });
       } catch (error: any) {
+        console.log("MIDTRANS ERROR:", error.message); // 👈 tambah ini
         res.status(500).json({ error: error.message });
       }
     },
