@@ -266,7 +266,7 @@ async function startServer() {
       try {
         const transaction = await snap.createTransaction({
           transaction_details: {
-            order_id: `PREM-${req.user.id}-${Date.now()}`,
+            order_id: `PREM-${req.user.id.substring(0, 8)}-${Date.now()}`,
             gross_amount: 15000,
           },
           customer_details: { first_name: req.user.username },
