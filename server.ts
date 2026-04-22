@@ -281,7 +281,7 @@ async function startServer() {
         });
         res.json({ token: transaction.token });
       } catch (error: any) {
-        console.log("MIDTRANS ERROR:", error.message); // 👈 tambah ini
+        console.log("MIDTRANS ERROR:", error.message);
         res.status(500).json({ error: error.message });
       }
     },
