@@ -9,6 +9,11 @@ import jwt from "jsonwebtoken";
 import midtransClient from "midtrans-client";
 
 dotenv.config();
+console.log("=== MIDTRANS DEBUG ===");
+console.log("Server Key:", process.env.MIDTRANS_SERVER_KEY);
+console.log("Client Key:", process.env.VITE_MIDTRANS_CLIENT_KEY);
+console.log("=====================");
+
 const JWT_SECRET = "my_dearest_secret_777";
 
 async function startServer() {
