@@ -19,8 +19,13 @@ async function startServer() {
   const snap = new midtransClient.Snap({
     isProduction: false,
     serverKey: process.env.MIDTRANS_SERVER_KEY || "",
-    clientKey: process.env.VITE_MIDTRANS_CLIENT_KEY || "",
+    clientKey: process.env.MIDTRANS_CLIENT_KEY || "",
   });
+
+  console.log(
+    "Server Key:",
+    process.env.MIDTRANS_SERVER_KEY ? "✅ Loaded" : "❌ MISSING",
+  );
 
   let memoryUsers: any[] = [];
   let memoryTasks: any[] = [];
